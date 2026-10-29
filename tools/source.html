@@ -1,0 +1,717 @@
+<title>Walk-in Count</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: one phone-width column. Sticky header with area tabs, then the active view. Kitchen-label vernacular: condensed caps, masking-tape chips. */
+:root {
+  --bg: #f2f4f3;
+  --surface: #ffffff;
+  --sunk: #e6eae8;
+  --ink: #18211e;
+  --muted: #5b6763;
+  --line: #d3dad7;
+  --accent: #0e6a5b;
+  --accent-ink: #ffffff;
+  --accent-soft: #d7ebe6;
+  --tape: #f3d77a;
+  --tape-ink: #3d3210;
+  --warn: #a8640c;
+  --warn-soft: #f8e7cc;
+  --crit: #b3261e;
+  --crit-soft: #f6d9d6;
+  --ok: #2c6e3f;
+  --ok-soft: #dcefe0;
+  --display: "Barlow Condensed", "Arial Narrow", system-ui, sans-serif;
+  --body: "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  --radius: 10px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #111715; --surface: #19211e; --sunk: #222c29; --ink: #e7eeeb; --muted: #9aa8a3; --line: #2f3b37;
+  --accent: #4fb8a2; --accent-ink: #08201b; --accent-soft: #1d3a34; --tape: #d9bd5c; --tape-ink: #2a2208;
+  --warn: #e3a64f; --warn-soft: #3a2d17; --crit: #f08a80; --crit-soft: #3d1f1c; --ok: #7cc791; --ok-soft: #1c3324;
+  color-scheme: dark;
+} }
+:root[data-theme="dark"] {
+  --bg: #111715; --surface: #19211e; --sunk: #222c29; --ink: #e7eeeb; --muted: #9aa8a3; --line: #2f3b37;
+  --accent: #4fb8a2; --accent-ink: #08201b; --accent-soft: #1d3a34; --tape: #d9bd5c; --tape-ink: #2a2208;
+  --warn: #e3a64f; --warn-soft: #3a2d17; --crit: #f08a80; --crit-soft: #3d1f1c; --ok: #7cc791; --ok-soft: #1c3324;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 15px; line-height: 1.45; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--surface); }
+.wrap { max-width: 720px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+header { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--surface); border-bottom: 1px solid var(--line); }
+header .wrap { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-block: 12px 0; flex-wrap: wrap; }
+.brand { font-family: var(--display); font-weight: 700; font-size: 26px; letter-spacing: .02em; text-transform: uppercase; line-height: 1; }
+.brand span { background: var(--tape); color: var(--tape-ink); padding: 0 6px; margin-left: 4px; transform: rotate(-1.5deg); display: inline-block; }
+.status { font-size: 12px; color: var(--muted); }
+nav.tabs { display: flex; gap: 4px; width: 100%; margin-top: 10px; }
+nav.tabs button { flex: 1; font: 600 15px var(--body); background: none; border: 0; border-bottom: 3px solid transparent; color: var(--muted); padding: 10px 4px; cursor: pointer; }
+nav.tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); }
+main { padding-block: 18px 48px; }
+section.view { display: grid; gap: 16px; }
+h2 { font-family: var(--display); font-weight: 700; font-size: 22px; text-transform: uppercase; letter-spacing: .03em; margin: 0; text-wrap: balance; }
+.label { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+p { margin: 0; }
+.muted { color: var(--muted); }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; display: grid; gap: 12px; min-width: 0; }
+.areas { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip-btn { font: 600 14px var(--body); border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 999px; padding: 8px 14px; cursor: pointer; }
+.chip-btn[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.btn { font: 700 16px var(--body); border: 0; border-radius: var(--radius); padding: 14px 18px; cursor: pointer; background: var(--accent); color: var(--accent-ink); display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.btn.secondary { background: var(--sunk); color: var(--ink); }
+.btn.ghost { background: none; color: var(--accent); padding: 8px 4px; font-size: 14px; }
+.btn:disabled { opacity: .5; cursor: default; }
+.btn:focus-visible, .chip-btn:focus-visible, nav.tabs button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px solid var(--tape); outline-offset: 2px; }
+.row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.row > .btn { flex: 1 1 160px; }
+.drop { border: 2px dashed var(--line); border-radius: var(--radius); padding: 22px 16px; text-align: center; display: grid; gap: 10px; justify-items: center; background: var(--sunk); }
+.drop.over { border-color: var(--accent); }
+.thumbs { display: grid; grid-template-columns: repeat(auto-fill, minmax(88px, 1fr)); gap: 8px; width: 100%; }
+.thumb { position: relative; aspect-ratio: 1; max-width: 100%; border-radius: 8px; overflow: hidden; background: var(--line); }
+.thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.thumb button { position: absolute; top: 4px; right: 4px; width: 26px; height: 26px; border-radius: 50%; border: 0; background: rgba(0,0,0,.6); color: #fff; font-size: 16px; line-height: 1; cursor: pointer; }
+.thinking { display: flex; gap: 10px; align-items: center; }
+.spinner { width: 18px; height: 18px; border: 3px solid var(--accent-soft); border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; flex: none; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spinner { animation-duration: 3s; } }
+.notice { border-radius: var(--radius); padding: 12px 14px; font-size: 14px; }
+.notice.err { background: var(--crit-soft); color: var(--crit); }
+.notice.info { background: var(--accent-soft); color: var(--ink); }
+.notice.ok { background: var(--ok-soft); color: var(--ok); font-weight: 600; }
+/* review lines */
+.lines { display: grid; gap: 8px; }
+.line { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px 10px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); align-items: center; }
+.line .name { width: 100%; font: 600 15px var(--body); border: 0; border-bottom: 1px dashed var(--line); background: none; color: var(--ink); padding: 2px 0; min-width: 0; }
+.line .meta { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 13px; color: var(--muted); }
+.qty { display: flex; align-items: center; gap: 4px; }
+.qty button { width: 34px; height: 34px; border-radius: 8px; border: 1px solid var(--line); background: var(--sunk); color: var(--ink); font-size: 18px; cursor: pointer; }
+.qty input { width: 58px; text-align: center; font: 500 16px var(--mono); font-variant-numeric: tabular-nums; border: 1px solid var(--line); border-radius: 8px; padding: 6px 2px; background: var(--surface); color: var(--ink); }
+.unit { font: 500 13px var(--body); border: 1px solid var(--line); border-radius: 6px; padding: 3px 6px; width: 90px; background: var(--surface); color: var(--ink); }
+.pill { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; padding: 3px 8px; border-radius: 999px; white-space: nowrap; }
+.pill.high { background: var(--ok-soft); color: var(--ok); }
+.pill.medium { background: var(--warn-soft); color: var(--warn); }
+.pill.low { background: var(--crit-soft); color: var(--crit); }
+.pill.new { background: var(--tape); color: var(--tape-ink); }
+.x { margin-left: auto; border: 0; background: none; color: var(--muted); font-size: 13px; text-decoration: underline; cursor: pointer; }
+/* inventory table */
+.tools { display: flex; gap: 8px; flex-wrap: wrap; }
+.tools input[type=search] { flex: 1 1 200px; font: 15px var(--body); padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); min-width: 0; }
+.summary { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 8px; }
+.stat { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 10px 12px; }
+.stat b { display: block; font: 700 28px var(--display); font-variant-numeric: tabular-nums; line-height: 1.1; }
+.stat.crit b { color: var(--crit); }
+.stat.warn b { color: var(--warn); }
+.table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th { text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); padding: 10px 12px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+td { padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+tr:last-child td { border-bottom: 0; }
+td.num { font-family: var(--mono); font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+td .sub { font-size: 12px; color: var(--muted); }
+td input.par { width: 64px; text-align: right; font: 500 14px var(--mono); border: 1px solid var(--line); border-radius: 6px; padding: 5px 6px; background: var(--surface); color: var(--ink); }
+.cat { font-size: 12px; color: var(--muted); }
+.empty { text-align: center; padding: 28px 16px; display: grid; gap: 8px; justify-items: center; }
+.empty .big { font: 700 20px var(--display); text-transform: uppercase; letter-spacing: .03em; }
+.hist { display: grid; gap: 8px; }
+details.count { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; }
+details.count summary { cursor: pointer; display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; font-weight: 600; }
+details.count ul { margin: 10px 0 0; padding-left: 18px; font-size: 14px; }
+details.count li span { font-family: var(--mono); }
+.tip { font-size: 13px; color: var(--muted); }
+.tip li { margin-bottom: 2px; }
+textarea { width: 100%; font: 15px/1.45 var(--body); padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); resize: vertical; }
+textarea:focus-visible { outline: 3px solid var(--tape); outline-offset: 2px; }
+.mic { display: inline-flex; align-items: center; gap: 6px; font: 700 15px var(--body); border: 2px solid var(--accent); color: var(--accent); background: var(--surface); border-radius: 999px; padding: 8px 16px; cursor: pointer; }
+.mic[aria-pressed="true"] { background: var(--crit); border-color: var(--crit); color: var(--surface); }
+.mic:focus-visible { outline: 3px solid var(--tape); outline-offset: 2px; }
+.change { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; }
+.change strong { flex: 1 1 160px; min-width: 0; }
+.change .delta { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+</style>
+
+<header>
+  <div class="wrap">
+    <div class="brand">Walk-in <span>Count</span></div>
+    <div class="status" id="status">Connecting…</div>
+    <nav class="tabs" role="tablist">
+      <button role="tab" id="tab-count" aria-selected="true" data-view="count">Count</button>
+      <button role="tab" id="tab-inv" aria-selected="false" data-view="inv">On hand</button>
+      <button role="tab" id="tab-hist" aria-selected="false" data-view="hist">History</button>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <!-- COUNT -->
+  <section class="view" id="view-count">
+    <div class="card">
+      <div class="label">1 · Where are you counting?</div>
+      <div class="areas" id="areas"></div>
+    </div>
+
+    <div class="card">
+      <div class="label">2 · Snap the shelves</div>
+      <div class="drop" id="drop">
+        <p><strong>Take a photo of each shelf</strong> or drop images here.</p>
+        <p class="muted" style="font-size:13px">One shelf per photo counts best. Or record a slow video walking past the shelves. Up to <span id="maxImg">5</span> images per count.</p>
+        <div class="row" style="width:100%;max-width:520px">
+          <label class="btn" for="cam">Take photo</label>
+          <label class="btn secondary" for="vid">Record video</label>
+          <label class="btn secondary" for="pick">Choose files</label>
+        </div>
+        <input id="cam" type="file" accept="image/*" capture="environment" hidden>
+        <input id="vid" type="file" accept="video/*" capture="environment" hidden>
+        <input id="pick" type="file" accept="image/*,video/*" multiple hidden>
+        <div class="thumbs" id="thumbs"></div>
+      </div>
+      <button class="btn" id="countBtn" disabled>Count it</button>
+      <div id="countMsg" hidden></div>
+      <ul class="tip" id="tips">
+        <li>Turn labels toward the camera and step back far enough to fit the whole shelf.</li>
+        <li>Good light matters more than resolution. Open the walk-in door wide or use the flash.</li>
+      </ul>
+    </div>
+
+    <div class="card" id="review" hidden>
+      <div class="row" style="justify-content:space-between">
+        <h2 id="reviewTitle">Review count</h2>
+        <span class="muted" id="reviewMeta"></span>
+      </div>
+      <p class="muted" id="aiSummary" style="font-size:14px"></p>
+      <div class="lines" id="lines"></div>
+      <button class="btn ghost" id="addLine" style="justify-self:start">+ Add item it missed</button>
+      <div class="row">
+        <button class="btn" id="saveBtn">Save count</button>
+        <button class="btn secondary" id="discardBtn">Discard</button>
+      </div>
+      <div id="saveMsg" hidden></div>
+    </div>
+  </section>
+
+  <!-- ON HAND -->
+  <section class="view" id="view-inv" hidden>
+    <div class="card" id="talkCard">
+      <div class="row" style="justify-content:space-between">
+        <h2>Tell it what changed</h2>
+        <button class="mic" id="micBtn" aria-pressed="false" aria-label="Talk">
+          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M12 15a3 3 0 0 0 3-3V6a3 3 0 1 0-6 0v6a3 3 0 0 0 3 3Zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-2.08A7 7 0 0 0 19 12h-2Z"/></svg>
+          <span id="micLabel">Talk</span>
+        </button>
+      </div>
+      <textarea id="talkText" rows="3" placeholder="&quot;We got 4 cases of romas in the walk-in. Heavy cream is down to 2. Set par for chicken thighs to 6 cases.&quot;"></textarea>
+      <p class="tip" id="micNote">Tap Talk and speak, or tap the mic on your phone keyboard and dictate.</p>
+      <button class="btn" id="talkBtn">Update inventory</button>
+      <div id="talkMsg" hidden></div>
+      <div id="talkReview" hidden>
+        <div class="label" style="margin-bottom:8px">Changes to apply</div>
+        <div class="lines" id="changes"></div>
+        <div class="row" style="margin-top:12px">
+          <button class="btn" id="applyBtn">Apply changes</button>
+          <button class="btn secondary" id="cancelTalk">Cancel</button>
+        </div>
+      </div>
+    </div>
+    <div class="summary">
+      <div class="stat"><span class="label">Items</span><b id="stItems">0</b></div>
+      <div class="stat crit"><span class="label">Below par</span><b id="stBelow">0</b></div>
+      <div class="stat warn"><span class="label">No par set</span><b id="stNoPar">0</b></div>
+    </div>
+    <div class="tools">
+      <input type="search" id="search" placeholder="Search items" aria-label="Search items">
+      <button class="chip-btn" id="fltBelow" aria-pressed="false">Below par only</button>
+    </div>
+    <p class="tip">Set a par for each item (what you want on hand after a delivery). Anything below par is what you need to order.</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Item</th><th style="text-align:right">On hand</th><th style="text-align:right">Par</th><th>Status</th></tr></thead>
+        <tbody id="invBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- HISTORY -->
+  <section class="view" id="view-hist" hidden>
+    <h2>Past counts</h2>
+    <div class="hist" id="hist"></div>
+  </section>
+</main>
+
+<script>
+(() => {
+  const AREAS = [
+    { id: "walkin", name: "Walk-in cooler" },
+    { id: "freezer", name: "Freezer" },
+    { id: "dry", name: "Dry storage" },
+    { id: "line", name: "Line / reach-ins" },
+    { id: "bar", name: "Bar" },
+  ];
+  const CATS = ["Produce", "Protein", "Dairy", "Dry goods", "Frozen", "Beverage", "Paper & chem", "Other"];
+  const $ = (s) => document.getElementById(s);
+  const areaName = (id) => (AREAS.find(a => a.id === id) || { name: id }).name;
+  const slug = (s) => String(s).toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 80) || "item";
+  const fmt = (n) => (Math.round(Number(n) * 100) / 100).toString();
+  const esc = (s) => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const safeGet = (k) => { try { return localStorage.getItem(k); } catch { return null; } };
+  const safeSet = (k, v) => { try { localStorage.setItem(k, v); } catch {} };
+
+  let db = null, sample = null, maxImages = 5;
+  let area = safeGet("area") || "walkin";
+  let photos = []; // {blob, url}
+  let lines = []; // {name, qty, unit, category, confidence, note, isNew}
+  let items = new Map(); // id -> data
+  let ctl = null;
+
+  // ---------- tabs ----------
+  document.querySelectorAll("nav.tabs button").forEach(b => b.onclick = () => showView(b.dataset.view));
+  function showView(v) {
+    document.querySelectorAll("nav.tabs button").forEach(b => b.setAttribute("aria-selected", b.dataset.view === v));
+    ["count", "inv", "hist"].forEach(id => $("view-" + id).hidden = id !== v);
+  }
+
+  // ---------- areas ----------
+  function renderAreas() {
+    $("areas").innerHTML = AREAS.map(a => `<button class="chip-btn" data-a="${a.id}" aria-pressed="${a.id === area}">${a.name}</button>`).join("");
+    $("areas").querySelectorAll("button").forEach(b => b.onclick = () => { area = b.dataset.a; safeSet("area", area); renderAreas(); });
+  }
+  renderAreas();
+
+  // ---------- photos ----------
+  async function shrink(file) {
+    // Downscale big phone photos before sending; the model sees ~1.2MP anyway.
+    try {
+      const bmp = await createImageBitmap(file, { imageOrientation: "from-image" });
+      const scale = Math.min(1, 1800 / Math.max(bmp.width, bmp.height));
+      const c = document.createElement("canvas");
+      c.width = Math.round(bmp.width * scale); c.height = Math.round(bmp.height * scale);
+      c.getContext("2d").drawImage(bmp, 0, 0, c.width, c.height);
+      return await new Promise(r => c.toBlob(b => r(b || file), "image/jpeg", 0.85));
+    } catch { return file; }
+  }
+  function seek(v, t) { return new Promise((res, rej) => { v.onseeked = () => res(); v.onerror = rej; v.currentTime = t; }); }
+  async function addVideo(file) {
+    const room = maxImages - photos.length;
+    if (room <= 0) { showMsg("countMsg", "err", `That's the limit of ${maxImages} images per count. Save this count, then start another.`); return; }
+    showMsg("countMsg", "info", `<div class="thinking"><div class="spinner"></div><div>Pulling frames from the video…</div></div>`);
+    const url = URL.createObjectURL(file);
+    try {
+      const v = document.createElement("video");
+      v.muted = true; v.playsInline = true; v.preload = "auto"; v.src = url;
+      await new Promise((res, rej) => { v.onloadeddata = res; v.onerror = () => rej(new Error("unreadable")); });
+      const dur = v.duration;
+      if (!isFinite(dur) || dur <= 0) throw new Error("no duration");
+      // About one frame every 2 seconds of footage, capped by the free slots.
+      const n = Math.max(1, Math.min(room, Math.ceil(dur / 2)));
+      for (let i = 0; i < n; i++) {
+        await seek(v, Math.min(dur - 0.05, dur * (i + 0.5) / n));
+        const scale = Math.min(1, 1600 / Math.max(v.videoWidth, v.videoHeight));
+        const c = document.createElement("canvas");
+        c.width = Math.round(v.videoWidth * scale); c.height = Math.round(v.videoHeight * scale);
+        c.getContext("2d").drawImage(v, 0, 0, c.width, c.height);
+        const blob = await new Promise(r => c.toBlob(r, "image/jpeg", 0.85));
+        if (blob) photos.push({ blob, url: URL.createObjectURL(blob), fromVideo: true });
+      }
+      showMsg("countMsg", "", "");
+    } catch {
+      showMsg("countMsg", "err", "Couldn't read that video. Try a shorter clip, or take photos instead.");
+    } finally { URL.revokeObjectURL(url); renderThumbs(); }
+  }
+  async function addFiles(list) {
+    for (const f of Array.from(list || [])) {
+      if (f.type.startsWith("video/")) { await addVideo(f); continue; }
+      if (!f.type.startsWith("image/")) continue;
+      if (photos.length >= maxImages) { showMsg("countMsg", "err", `That's the limit of ${maxImages} photos per count. Save this count, then start another for the next section.`); break; }
+      const blob = await shrink(f);
+      photos.push({ blob, url: URL.createObjectURL(blob) });
+    }
+    renderThumbs();
+  }
+  function renderThumbs() {
+    $("thumbs").innerHTML = photos.map((p, i) => `<div class="thumb"><img src="${p.url}" alt="Shelf photo ${i + 1}"><button aria-label="Remove photo ${i + 1}" data-i="${i}">×</button></div>`).join("");
+    $("thumbs").querySelectorAll("button").forEach(b => b.onclick = () => { const [p] = photos.splice(+b.dataset.i, 1); URL.revokeObjectURL(p.url); renderThumbs(); });
+    $("countBtn").disabled = !photos.length || !sample;
+    $("countBtn").textContent = photos.length ? `Count ${photos.length} photo${photos.length > 1 ? "s" : ""}` : "Count it";
+  }
+  $("cam").onchange = (e) => { addFiles(e.target.files); e.target.value = ""; };
+  $("vid").onchange = (e) => { addFiles(e.target.files); e.target.value = ""; };
+  $("pick").onchange = (e) => { addFiles(e.target.files); e.target.value = ""; };
+  const drop = $("drop");
+  drop.addEventListener("dragover", e => { e.preventDefault(); drop.classList.add("over"); });
+  drop.addEventListener("dragleave", () => drop.classList.remove("over"));
+  drop.addEventListener("drop", e => { e.preventDefault(); drop.classList.remove("over"); addFiles(e.dataTransfer.files); });
+
+  function showMsg(id, kind, html) { const el = $(id); el.hidden = !html; el.className = "notice " + kind; el.innerHTML = html || ""; }
+
+  // ---------- AI count ----------
+  function buildPrompt() {
+    const known = [...items.values()].map(i => `${i.name} (${i.unit || "each"})`).slice(0, 400);
+    return [
+      `You are an inventory counter for a restaurant. The ${photos.length} attached photo(s) show the "${areaName(area)}" storage area.`,
+      `Identify every distinct product you can see and count how many there are.`,
+      ``,
+      `Rules:`,
+      `- Count in the unit the product is stored in: case, box, bag, bottle, can, jug, tub, sleeve, pack, each, etc.`,
+      `- Count opened or partial containers as fractions (half a bag = 0.5).`,
+      `- If stacks are partly hidden, estimate from visible rows x depth and set confidence "low", saying why in the note.`,
+      photos.some(p => p.fromVideo)
+        ? `- Some images are frames, in order, from a video walking past the shelves. Neighboring frames overlap a lot: track each shelf across frames and count every physical item once.`
+        : `- The photos are usually different shelves. Only merge the same product across photos when two photos clearly show the same spot; never double count overlapping views.`,
+      `- Read labels, brands and case markings to name products specifically (e.g. "Roma tomatoes", "Heavy cream 1/2 gal").`,
+      `- Category is one of: ${CATS.join(", ")}.`,
+      known.length ? `- This restaurant already tracks these items. When a product matches one, use that exact name and unit:\n${known.join("; ")}` : `- This is the first count, so there is no existing item list.`,
+      ``,
+      `Reply with only JSON in this shape:`,
+      `{"items":[{"name":"Roma tomatoes","qty":3,"unit":"case","category":"Produce","confidence":"high","note":""}],"summary":"One sentence on what you saw and anything hard to count."}`,
+    ].join("\n");
+  }
+
+  $("countBtn").onclick = async () => {
+    if (!sample || !photos.length) return;
+    ctl = new AbortController();
+    $("countBtn").disabled = true;
+    showMsg("countMsg", "info", `<div class="thinking"><div class="spinner"></div><div>Counting the ${esc(areaName(area).toLowerCase())}… this usually takes 20 to 60 seconds. <button class="x" id="stopBtn">Stop</button></div></div>`);
+    $("stopBtn").onclick = () => ctl?.abort();
+    try {
+      const out = await sample.json(buildPrompt(), { images: photos.map(p => p.blob), signal: ctl.signal, modelTier: "default" });
+      const raw = Array.isArray(out?.items) ? out.items : [];
+      lines = normalizeLines(raw);
+      $("aiSummary").textContent = typeof out?.summary === "string" ? out.summary : "";
+      showMsg("countMsg", "", "");
+      openReview();
+    } catch (e) {
+      const code = e?.code;
+      const copy = {
+        cancelled: "",
+        not_granted: "Counting needs permission to use the AI. Reload the page and choose Allow when asked.",
+        no_key: "Add your API key in Settings (top right) to turn on counting.",
+        bad_key: "That API key didn't work. Check it in Settings.",
+        sampling_disabled: "AI counting isn't available on this account.",
+        images_unavailable: "This view can't send photos for counting.",
+        image_rejected: "One of the photos couldn't be read. Remove it and try a JPEG or PNG.",
+        rate_limited: "You've hit a usage limit for now. Wait a few minutes and try again.",
+        invalid_json: "The count came back garbled. Tap Count again.",
+        refused: "The AI declined to count these photos. Try different photos.",
+      }[code] ?? "Something went wrong reaching the AI. Tap Count again.";
+      showMsg("countMsg", "err", copy);
+    } finally {
+      $("countBtn").disabled = !photos.length;
+      ctl = null;
+    }
+  };
+
+  function normalizeLines(raw) {
+    const byName = new Map([...items.values()].map(i => [i.name.toLowerCase(), i]));
+    return raw.filter(r => r && r.name).map(r => {
+      const name = String(r.name).trim().slice(0, 80);
+      const match = byName.get(name.toLowerCase());
+      const qty = Math.max(0, Number(r.qty) || 0);
+      const conf = ["high", "medium", "low"].includes(r.confidence) ? r.confidence : "medium";
+      return {
+        name: match ? match.name : name,
+        qty,
+        unit: String(r.unit || match?.unit || "each").slice(0, 20),
+        category: CATS.includes(r.category) ? r.category : (match?.category || "Other"),
+        confidence: conf,
+        note: String(r.note || "").slice(0, 200),
+        isNew: !match,
+      };
+    });
+  }
+
+  // ---------- review ----------
+  function openReview() {
+    $("review").hidden = false;
+    $("reviewTitle").textContent = `Review: ${areaName(area)}`;
+    renderLines();
+    $("review").scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
+  }
+  function renderLines() {
+    const low = lines.filter(l => l.confidence === "low").length;
+    $("reviewMeta").textContent = `${lines.length} items${low ? ` · ${low} to double-check` : ""}`;
+    $("lines").innerHTML = lines.length ? lines.map((l, i) => `
+      <div class="line" data-i="${i}">
+        <input class="name" id="ln-name-${i}" value="${esc(l.name)}" aria-label="Item name">
+        <div class="qty">
+          <button data-d="-1" aria-label="Less">−</button>
+          <input id="ln-qty-${i}" inputmode="decimal" value="${fmt(l.qty)}" aria-label="Quantity">
+          <button data-d="1" aria-label="More">+</button>
+        </div>
+        <div class="meta">
+          <input class="unit" id="ln-unit-${i}" value="${esc(l.unit)}" aria-label="Unit">
+          <span class="pill ${l.confidence}">${l.confidence === "high" ? "Sure" : l.confidence === "medium" ? "Check" : "Recount"}</span>
+          ${l.isNew ? `<span class="pill new">New item</span>` : ""}
+          ${l.note ? `<span>${esc(l.note)}</span>` : ""}
+          <button class="x" data-rm>Remove</button>
+        </div>
+      </div>`).join("") : `<p class="muted">Nothing was recognized. Add items by hand or retake the photos closer to the shelf.</p>`;
+    $("lines").querySelectorAll(".line").forEach(row => {
+      const i = +row.dataset.i;
+      row.querySelector(".name").oninput = (e) => { lines[i].name = e.target.value; lines[i].isNew = !items.has(slug(e.target.value)); };
+      row.querySelector(".unit").oninput = (e) => { lines[i].unit = e.target.value; };
+      const q = row.querySelector(".qty input");
+      q.oninput = () => { lines[i].qty = Math.max(0, Number(q.value) || 0); };
+      row.querySelectorAll(".qty button").forEach(b => b.onclick = () => {
+        lines[i].qty = Math.max(0, (Number(lines[i].qty) || 0) + Number(b.dataset.d));
+        lines[i].confidence = "high";
+        renderLines();
+      });
+      row.querySelector("[data-rm]").onclick = () => { lines.splice(i, 1); renderLines(); };
+    });
+  }
+  $("addLine").onclick = () => { lines.push({ name: "", qty: 1, unit: "each", category: "Other", confidence: "high", note: "", isNew: true }); renderLines(); const n = $("ln-name-" + (lines.length - 1)); n && n.focus(); };
+  $("discardBtn").onclick = () => { lines = []; $("review").hidden = true; showMsg("saveMsg", "", ""); };
+
+  $("saveBtn").onclick = async () => {
+    if (!db) return showMsg("saveMsg", "err", "Saving isn't available in this view.");
+    const clean = lines.map(l => ({ ...l, name: l.name.trim() })).filter(l => l.name);
+    if (!clean.length) return showMsg("saveMsg", "err", "Add at least one item before saving.");
+    $("saveBtn").disabled = true;
+    showMsg("saveMsg", "info", `<div class="thinking"><div class="spinner"></div><div>Saving ${clean.length} items…</div></div>`);
+    const at = new Date().toISOString();
+    try {
+      for (const l of clean) {
+        const id = slug(l.name);
+        const ref = db.doc("items/" + id);
+        const existing = items.get(id);
+        if (existing) {
+          await ref.update({ unit: l.unit, byArea: { [area]: l.qty }, countedAt: { [area]: at }, updatedAt: at });
+        } else {
+          await ref.set({ name: l.name, unit: l.unit, category: l.category, par: null, byArea: { [area]: l.qty }, countedAt: { [area]: at }, updatedAt: at });
+        }
+      }
+      await db.collection("counts").add({
+        at, area, areaName: areaName(area), photoCount: photos.length,
+        lines: clean.map(l => ({ name: l.name, qty: l.qty, unit: l.unit, confidence: l.confidence })),
+      });
+      photos.forEach(p => URL.revokeObjectURL(p.url)); photos = []; renderThumbs();
+      lines = []; $("review").hidden = true;
+      showMsg("countMsg", "ok", `Saved ${clean.length} items for the ${esc(areaName(area).toLowerCase())}. <button class="x" id="goInv">See what's on hand</button>`);
+      $("goInv").onclick = () => showView("inv");
+      showMsg("saveMsg", "", "");
+    } catch (e) {
+      const msg = e?.code === "quota_exceeded" ? "Storage is full. Delete old counts before saving more." : "Couldn't save. Check your connection and tap Save again.";
+      showMsg("saveMsg", "err", msg);
+    } finally {
+      $("saveBtn").disabled = false;
+    }
+  };
+
+  // ---------- on hand ----------
+  let onlyBelow = false;
+  $("fltBelow").onclick = () => { onlyBelow = !onlyBelow; $("fltBelow").setAttribute("aria-pressed", onlyBelow); renderInv(); };
+  $("search").oninput = renderInv;
+  const total = (i) => Object.values(i.byArea || {}).reduce((a, b) => a + (Number(b) || 0), 0);
+  function statusOf(i) {
+    if (i.par == null || i.par === "") return { k: "nopar", t: "Set par", c: "medium" };
+    const t = total(i);
+    if (t < i.par) return { k: "below", t: `Order ${fmt(i.par - t)}`, c: "low" };
+    if (t < i.par * 1.2) return { k: "near", t: "Near par", c: "medium" };
+    return { k: "ok", t: "OK", c: "high" };
+  }
+  function renderInv() {
+    const all = [...items.entries()];
+    $("stItems").textContent = all.length;
+    $("stBelow").textContent = all.filter(([, i]) => statusOf(i).k === "below").length;
+    $("stNoPar").textContent = all.filter(([, i]) => statusOf(i).k === "nopar").length;
+    const q = $("search").value.trim().toLowerCase();
+    const rows = all
+      .filter(([, i]) => !q || i.name.toLowerCase().includes(q) || (i.category || "").toLowerCase().includes(q))
+      .filter(([, i]) => !onlyBelow || statusOf(i).k === "below")
+      .sort((a, b) => (a[1].category || "").localeCompare(b[1].category || "") || a[1].name.localeCompare(b[1].name));
+    if (!all.length) {
+      $("invBody").innerHTML = `<tr><td colspan="4"><div class="empty"><div class="big">Nothing counted yet</div><p class="muted">Snap your first shelf on the Count tab. Every item it finds lands here with its count by area.</p></div></td></tr>`;
+      return;
+    }
+    if (!rows.length) { $("invBody").innerHTML = `<tr><td colspan="4"><div class="empty"><p class="muted">No items match.</p></div></td></tr>`; return; }
+    $("invBody").innerHTML = rows.map(([id, i]) => {
+      const s = statusOf(i);
+      const where = Object.entries(i.byArea || {}).filter(([, v]) => v > 0).map(([a, v]) => `${areaName(a)} ${fmt(v)}`).join(" · ");
+      return `<tr>
+        <td><div><strong>${esc(i.name)}</strong></div><div class="cat">${esc(i.category || "Other")}${where ? " · " + esc(where) : ""}</div></td>
+        <td class="num">${fmt(total(i))}<div class="sub">${esc(i.unit || "")}</div></td>
+        <td class="num"><input class="par" id="par-${esc(id)}" data-id="${esc(id)}" inputmode="decimal" value="${i.par ?? ""}" placeholder="–" aria-label="Par for ${esc(i.name)}"></td>
+        <td><span class="pill ${s.c}">${s.t}</span></td>
+      </tr>`;
+    }).join("");
+    $("invBody").querySelectorAll("input.par").forEach(inp => inp.onchange = async () => {
+      const v = inp.value.trim() === "" ? null : Math.max(0, Number(inp.value) || 0);
+      try { await db.doc("items/" + inp.dataset.id).update({ par: v }); } catch { inp.value = items.get(inp.dataset.id)?.par ?? ""; }
+    });
+  }
+
+  // ---------- talk to it ----------
+  let rec = null, listening = false, changes = [];
+  $("micBtn").onclick = () => {
+    if (listening) { rec?.stop(); return; }
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) { micFallback(); return; }
+    try {
+      rec = new SR();
+      rec.lang = navigator.language || "en-US";
+      rec.interimResults = true;
+      rec.continuous = true;
+      const base = $("talkText").value.trim();
+      rec.onresult = (e) => {
+        let said = "";
+        for (const r of e.results) said += r[0].transcript;
+        $("talkText").value = (base ? base + " " : "") + said.trim();
+      };
+      rec.onerror = (e) => { if (e.error === "not-allowed" || e.error === "service-not-allowed" || e.error === "audio-capture") micFallback(); };
+      rec.onend = () => { listening = false; setMic(); };
+      rec.start();
+      listening = true; setMic();
+    } catch { micFallback(); }
+  };
+  function setMic() { $("micBtn").setAttribute("aria-pressed", listening); $("micLabel").textContent = listening ? "Stop" : "Talk"; }
+  function micFallback() {
+    listening = false; setMic();
+    $("micBtn").hidden = true;
+    $("micNote").textContent = "Tap the mic on your phone keyboard and dictate what changed, then tap Update.";
+    $("talkText").focus();
+  }
+
+  function talkPrompt(said) {
+    const known = [...items.entries()].map(([id, i]) => {
+      const where = Object.entries(i.byArea || {}).map(([a, v]) => `${a}=${fmt(v)}`).join(",");
+      return `${id} | ${i.name} | ${i.unit || "each"} | ${where || "none"} | par=${i.par ?? "unset"}`;
+    }).slice(0, 500);
+    return [
+      `A restaurant worker is telling their inventory app what changed. Turn what they said into inventory changes.`,
+      ``,
+      `Storage areas (use the id): ${AREAS.map(a => `${a.id}=${a.name}`).join(", ")}. If they don't name an area, use the area where the item already is; if it is in several or none, use "${area}".`,
+      `Current items (id | name | unit | on hand by area | par):`,
+      known.length ? known.join("\n") : "(none yet)",
+      ``,
+      `Actions:`,
+      `- "set": they state how many there are now ("heavy cream is down to 2", "we have 5 cases").`,
+      `- "add": something came in or was found ("got 4 cases of romas", "found another bag").`,
+      `- "subtract": something was used, wasted, or moved out ("tossed 2 heads of lettuce").`,
+      `- "par": they set the par level. Par has no area.`,
+      `Match spoken names to existing items loosely ("romas" = "Roma tomatoes") and give that item's id; otherwise id is null and give a clean product name. Speech-to-text may mishear words; use the item list to correct them.`,
+      ``,
+      `What they said: """${said.slice(0, 4000)}"""`,
+      ``,
+      `Reply with only JSON: {"changes":[{"id":"roma-tomatoes","name":"Roma tomatoes","action":"add","qty":4,"unit":"case","area":"walkin"}],"unclear":"anything you could not turn into a change, or empty"}`,
+    ].join("\n");
+  }
+
+  $("talkBtn").onclick = async () => {
+    rec?.stop();
+    const said = $("talkText").value.trim();
+    if (!said) return showMsg("talkMsg", "err", "Say or type what changed first.");
+    if (!sample) return showMsg("talkMsg", "err", "AI updates aren't available in this view.");
+    $("talkBtn").disabled = true;
+    showMsg("talkMsg", "info", `<div class="thinking"><div class="spinner"></div><div>Working out the changes…</div></div>`);
+    try {
+      const out = await sample.json(talkPrompt(said), { modelTier: "quick", cache: false });
+      changes = (Array.isArray(out?.changes) ? out.changes : []).filter(c => c && (c.name || c.id) && ["set", "add", "subtract", "par"].includes(c.action)).map(c => {
+        const id = c.id && items.has(c.id) ? c.id : slug(c.name || c.id);
+        const cur = items.get(id);
+        return {
+          id, isNew: !cur,
+          name: cur ? cur.name : String(c.name || c.id).trim().slice(0, 80),
+          action: c.action,
+          qty: Math.max(0, Number(c.qty) || 0),
+          unit: String(c.unit || cur?.unit || "each").slice(0, 20),
+          area: AREAS.some(a => a.id === c.area) ? c.area : area,
+        };
+      });
+      const unclear = typeof out?.unclear === "string" && out.unclear.trim() ? `Didn't catch: ${esc(out.unclear)}` : "";
+      showMsg("talkMsg", unclear ? "err" : "", unclear || (changes.length ? "" : "No changes found in that. Try naming the item and the amount."));
+      renderChanges();
+    } catch (e) {
+      showMsg("talkMsg", "err", e?.code === "rate_limited" ? "You've hit a usage limit for now. Try again in a few minutes." : e?.code === "no_key" ? "Add your API key in Settings (top right) first." : e?.code === "bad_key" ? "That API key didn't work. Check it in Settings." : e?.code === "not_granted" ? "This needs permission to use the AI. Reload and choose Allow." : "Couldn't work that out. Tap Update again.");
+    } finally { $("talkBtn").disabled = false; }
+  };
+
+  function afterChange(c) {
+    const cur = items.get(c.id);
+    if (c.action === "par") return null;
+    const before = Number(cur?.byArea?.[c.area]) || 0;
+    if (c.action === "set") return c.qty;
+    if (c.action === "add") return before + c.qty;
+    return Math.max(0, before - c.qty);
+  }
+  function renderChanges() {
+    $("talkReview").hidden = !changes.length;
+    $("changes").innerHTML = changes.map((c, i) => {
+      const cur = items.get(c.id);
+      let what;
+      if (c.action === "par") what = `Par <span class="delta">${fmt(cur?.par ?? 0)} → ${fmt(c.qty)}</span> ${esc(c.unit)}`;
+      else what = `${esc(areaName(c.area))}: <span class="delta">${fmt(Number(cur?.byArea?.[c.area]) || 0)} → ${fmt(afterChange(c))}</span> ${esc(c.unit)}`;
+      return `<div class="change"><strong>${esc(c.name)}</strong>${c.isNew ? `<span class="pill new">New item</span>` : ""}<span>${what}</span><button class="x" data-i="${i}">Remove</button></div>`;
+    }).join("");
+    $("changes").querySelectorAll("button").forEach(b => b.onclick = () => { changes.splice(+b.dataset.i, 1); renderChanges(); });
+  }
+  $("cancelTalk").onclick = () => { changes = []; renderChanges(); };
+  $("applyBtn").onclick = async () => {
+    if (!db) return showMsg("talkMsg", "err", "Saving isn't available in this view.");
+    $("applyBtn").disabled = true;
+    const at = new Date().toISOString();
+    try {
+      const log = [];
+      for (const c of changes) {
+        const ref = db.doc("items/" + c.id);
+        const cur = items.get(c.id);
+        if (c.action === "par") {
+          if (cur) await ref.update({ par: c.qty, updatedAt: at });
+          else await ref.set({ name: c.name, unit: c.unit, category: "Other", par: c.qty, byArea: {}, countedAt: {}, updatedAt: at });
+          log.push({ name: c.name, qty: c.qty, unit: c.unit, note: "par" });
+          continue;
+        }
+        const next = afterChange(c);
+        if (cur) await ref.update({ byArea: { [c.area]: next }, countedAt: { [c.area]: at }, updatedAt: at });
+        else await ref.set({ name: c.name, unit: c.unit, category: "Other", par: null, byArea: { [c.area]: next }, countedAt: { [c.area]: at }, updatedAt: at });
+        log.push({ name: c.name, qty: next, unit: c.unit, note: `${c.action} ${fmt(c.qty)} · ${areaName(c.area)}` });
+      }
+      await db.collection("counts").add({ at, area: "voice", areaName: "Voice update", said: $("talkText").value.trim().slice(0, 2000), lines: log });
+      showMsg("talkMsg", "ok", `Updated ${log.length} item${log.length === 1 ? "" : "s"}.`);
+      changes = []; renderChanges(); $("talkText").value = "";
+    } catch {
+      showMsg("talkMsg", "err", "Couldn't save. Check your connection and tap Apply again.");
+    } finally { $("applyBtn").disabled = false; }
+  };
+
+  // ---------- history ----------
+  function renderHist(docs) {
+    if (!docs.length) { $("hist").innerHTML = `<div class="card empty"><div class="big">No counts yet</div><p class="muted">Each saved count shows up here with the date, area and every line.</p></div>`; return; }
+    $("hist").innerHTML = docs.map(d => {
+      const c = d.data();
+      const when = new Date(c.at).toLocaleString([], { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+      return `<details class="count"><summary><span>${esc(c.areaName || areaName(c.area))}</span><span class="muted">${esc(when)} · ${(c.lines || []).length} items</span></summary>
+        ${c.said ? `<p class="tip" style="margin-top:8px">“${esc(c.said)}”</p>` : ""}
+        <ul>${(c.lines || []).map(l => `<li>${esc(l.name)}: <span>${fmt(l.qty)}</span> ${esc(l.unit)}${l.note ? ` <span class="muted">(${esc(l.note)})</span>` : ""}</li>`).join("")}</ul></details>`;
+    }).join("");
+  }
+
+  // ---------- boot ----------
+  renderInv(); renderHist([]); renderThumbs();
+  (async () => {
+    const use = (n) => window.claude?.use ? window.claude.use(n).catch(() => null) : Promise.resolve(null);
+    const [d, s] = await Promise.all([use("db"), use("sample")]);
+    db = d; sample = s;
+    if (sample) {
+      const lim = await sample.limits().catch(() => null);
+      if (lim?.images) { maxImages = lim.images.maxCount || 5; $("maxImg").textContent = maxImages; }
+      else sample = null;
+    }
+    const parts = [];
+    parts.push(sample ? "AI counting on" : "AI counting unavailable here");
+    parts.push(db ? "saving on" : "saving unavailable");
+    $("status").textContent = parts.join(" · ");
+    renderThumbs();
+    if (!sample) showMsg("countMsg", "err", "Photo counting isn't available in this view.");
+    if (db) {
+      db.collection("items").onSnapshot(snap => {
+        items = new Map(snap.docs.map(doc => [doc.id, doc.data()]));
+        renderInv();
+      }, () => { $("status").textContent = "Lost connection to saved inventory. Reload to reconnect."; });
+      db.collection("counts").orderBy("at", "desc").limit(50).onSnapshot(snap => renderHist(snap.docs), () => {});
+    }
+  })();
+})();
+</script>
